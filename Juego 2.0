@@ -1,0 +1,88 @@
+import pygame
+import random
+
+# Dimensiones de la pantalla
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 600
+
+# Colores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+class Bird(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((50, 50))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.rect.center = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2)
+        self.velocity = 0
+
+    def update(self):
+        self.velocity += 0.5
+        self.rect.y += self.velocity
+
+    def jump(self):
+        self.velocity = -10
+
+class Pipe(pygame.sprite.Sprite):
+    def __init__(self, y, is_top):
+        super().__init__()
+        self.image = pygame.Surface((50, SCREEN_HEIGHT))
+        self.image.fill(BLACK)
+        self.rect = self.image.get_rect()
+        if is_top:
+            self.rect.bottomleft = (SCREEN_WIDTH, y - 150)
+        else:
+            self.rect.topleft = (SCREEN_WIDTH, y + 150)
+    
+    def update(self):
+        self.rect.x -= 3
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Flappy Bird")
+    clock = pygame.time.Clock()
+
+    bird = Bird()
+    pipes = pygame.sprite.Group()
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    bird.jump()
+
+        screen.fill(WHITE)
+
+        # Generar tuberías aleatorias
+        if random.randrange(0, 100) < 2:
+            pipe = Pipe(random.randrange(150, SCREEN_HEIGHT - 150), random.choice([True, False]))
+            pipes.add(pipe)
+
+        bird.update()
+        pipes.update()
+
+        # Colisiones
+        if pygame.sprite.spritecollide(bird, pipes, False):
+            running = False
+
+        # Eliminar tuberías fuera de pantalla
+        for pipe in pipes.copy():
+            if pipe.rect.right <= 0:
+                pipes.remove(pipe)
+
+        pipes.draw(screen)
+        screen.blit(bird.image, bird.rect)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
